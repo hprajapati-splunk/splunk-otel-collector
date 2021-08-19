@@ -3,52 +3,32 @@ Familiarity with Amazon ECS using launch type EC2 is assumed. Consult the
 [Getting started with the Amazon ECS console using Amazon EC2](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/getting-started-ecs-ec2.html)
 for further reading.
 
-Unless stated otherwise, the
+The
 [Splunk OpenTelemetry Connector](https://github.com/signalfx/splunk-otel-collector)
-(Collector) is deployed as a **sidecar** (additional container) to ECS tasks.
+(Collector) should to be run as a Daemon service in an EC2 ECS cluster.
 
 Requires Connector release v0.32.0 or newer which corresponds to image tag 0.32.0 and newer.
 See image repository [here](https://quay.io/repository/signalfx/splunk-otel-collector?tab=tags).
 
 ## Getting Started
-Copy the default Collector container definition JSON below. Replace `MY_SPLUNK_ACCESS_TOKEN`
-and `MY_SPLUNK_REALM` with valid values. Update the image tag to the newest
-version then add the JSON to the `containerDefinitions` section of your task definition
-JSON.
-```json
-{
-  "environment": [
-    {
-      "name": "SPLUNK_ACCESS_TOKEN",
-      "value": "MY_SPLUNK_ACCESS_TOKEN"
-    },
-    {
-      "name": "SPLUNK_REALM",
-      "value": "MY_SPLUNK_REALM"
-    },
-    {
-      "name": "SPLUNK_CONFIG",
-      "value": "/etc/otel/collector/ecs_ec2_config.yaml"
-    },
-    {
-      "name": "ECS_METADATA_EXCLUDED_IMAGES",
-      "value": "[\"quay.io/signalfx/splunk-otel-collector\"]"
-    }
-  ],
-  "image": "quay.io/signalfx/splunk-otel-collector:0.32.0",
-  "essential": true,
-  "name": "splunk_otel_collector"
-}
-```
-In the above container definition the Collector is configured to use the default
-configuration file `/etc/otel/collector/ecs_ec2_config.yaml`. The Collector image Dockerfile
-is available [here](../../../cmd/otelcol/Dockerfile) and the contents of the default
+### Create Task Definition
+Take the task definition JSON for the Collector [here](./splunk-otel-collector.json), replace
+`MY_SPLUNK_ACCESS_TOKEN` and `MY_SPLUNK_REALM` with valid values. Update the image tag to
+the newest version. Use the JSON to create a task definition of **EC2 launch type** following
+the instructions [here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-task-definition.html).
+
+The Collector is configured to use the default configuration file `/etc/otel/collector/ecs_ec2_config.yaml`.
+The Collector image Dockerfile is available [here](../../../cmd/otelcol/Dockerfile) and the contents of the default
 configuration file can be seen [here](../../../cmd/otelcol/config/collector/ecs_ec2_config.yaml).
-Receiver `smartagent/ecs-metadata` uses **task metadata endpoint version 2** by default.
-This endpoint is enabled by default for tasks launched with network mode **awsvpc**
-according to [docs](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint.html).
-For other network modes add the following environment variables to the Collector container
-definition if **task metadata endpoint version 3** enabled:
+
+The configured network mode is **host**. This means that **task metadata endpoint version 2**
+used by receiver `smartagent/ecs-metadata` is not enabled by default. See
+[here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint.html)
+for the task metadata endpoint version enabled by default in your environment. Depending on
+your version of task metadata endpoint, add the following to the **environment** list in the
+task definition. 
+
+**Task metadata endpoint version 3**:
 ```json
 {
   "name": "ECS_TASK_METADATA_ENDPOINT",
@@ -59,7 +39,7 @@ definition if **task metadata endpoint version 3** enabled:
   "value": "${ECS_CONTAINER_METADATA_URI}/task/stats"
 }
 ```
-Add the following if **task metadata endpoint version 4** enabled instead:
+**Task metadata endpoint version 4**:
 ```json
 {
   "name": "ECS_TASK_METADATA_ENDPOINT",
@@ -71,45 +51,35 @@ Add the following if **task metadata endpoint version 4** enabled instead:
 }
 ```
 
-In summary, the default Collector container definition does the following:
-- Specifies the Collector image.
-- Sets the access token using environment variable `SPLUNK_ACCESS_TOKEN`.
-- Sets the realm using environment variable `SPLUNK_REALM`.
-- Sets the default configuration file path using environment variable `SPLUNK_CONFIG`.
-- Excludes `ecs-metadata` metrics from the Collector image using environment variable `ECS_METADATA_EXCLUDED_IMAGES`.
-
 Assign a stringified array of metrics you want excluded to environment variable
 `METRICS_TO_EXCLUDE`. You can set the memory limit for the memory limiter processor using
 environment variable `SPLUNK_MEMORY_LIMIT_MIB`. The default memory limit is 512 MiB. For
 more information about the memory limiter processor, see
 [here](https://github.com/open-telemetry/opentelemetry-collector/blob/main/processor/memorylimiter/README.md)
 
+### Launch the Collector
+The Collector is designed to be run as a Daemon service in an EC2 ECS cluster.
+
+To create a Collector service from the Amazon ECS console:
+
+Go to your cluster in the console
+1. Click on the "Services" tab.
+2. Click "Create" at the top of the tab.
+3. Select:
+   - Launch Type -> EC2
+   - Task Definition (Family) -> splunk-otel-collector
+   - Task Definition (Revision) -> 1 (or whatever the latest is in your case)
+   - Service Name -> splunk-otel-collector
+   - Service type -> DAEMON
+4. Leave everything else at default and click "Next step"
+5. Leave everything on this next page at their defaults and click "Next step". 
+6. Leave everything on this next page at their defaults and click "Next step". 
+7. Click "Create Service" and the agent should be deployed onto each node in the ECS cluster. You should see infrastructure and docker metrics flowing soon.
+
 ## Custom Configuration
-The example below shows an excerpt of the container definition JSON for the Collector 
-configured to use custom configuration file `/path/to/custom/config/file`. 
-`/path/to/custom/config/file` is a placeholder value for the actual custom configuration
-file path and `0.32.0` is the latest image tag at present. 
-
-
-The custom configuration file should be present in a volume attached to the task.
-
-
-```json
-{
-  "environment": [
-    {
-      "name": "SPLUNK_CONFIG",
-      "value": "/path/to/custom/config/file"
-    }
-  ],
-  "image": "quay.io/signalfx/splunk-otel-collector:0.32.0",
-  "essential": true,
-  "name": "splunk_otel_collector"
-}
-```
-The custom Collector container definition essentially:
-- Specifies the Collector image.
-- Sets environment variable `SPLUNK_CONFIG` with the custom configuration file path.
+To use a custom configuration file, replace the value of environment variable
+`SPLUNK_CONFIG` with the file path of the custom configuration file in Collector
+task definition.
 
 Alternatively, you can specify the custom configuration YAML directly using environment
 variable `SPLUNK_CONFIG_YAML` as describe [below](#direct-configuration).
@@ -173,65 +143,14 @@ service:
       processors: [batch, resourcedetection]
       exporters: [signalfx]
 ```
-**Note:** The task ARN pattern in the configuration example above will cause `ecs_observer`
-to discover targets in running revisions of task `lorem-ipsum-task`. This
-means that when multiple revisions of task `lorem-ipsum-task` are running, the
-`ecs_observer` will discover targets outside the task in which the Collector sidecar
-container is running. In a sidecar deployment the Collector and the monitored containers
-are in the same task, so metric targets must be within task. This problem
-can be solved by using the complete task ARN as shown below. But, now the
-task ARN pattern must be updated to keep pace with task revisions.
-
-```yaml
-...
-     - arn_pattern: "^arn:aws:ecs:us-west-2:906383545488:task-definition/lorem-ipsum-task:3$"
-...
-```
 
 ### Direct Configuration
 The Collector provides environment variable `SPLUNK_CONFIG_YAML` for specifying the
 configuration YAML directly which can be used instead of `SPLUNK_CONFIG`.
 
 For example, you can store the custom configuration above in a parameter called
-`splunk-otel-collector-config` in **AWS Systems Manager Parameter Store**. Then in your
-Collector container definition assign the parameter to environment variable 
-`SPLUNK_CONFIG_YAML` using `valueFrom`. The example below shows an excerpt of the container
-definition JSON for the Collector. `MY_SPLUNK_ACCESS_TOKEN` and `MY_SPLUNK_REALM` are 
-placeholder values and image tag `0.32.0` is the latest at present.
-
-```json
-{
-  "environment": [
-    {
-      "name": "SPLUNK_ACCESS_TOKEN",
-      "value": "MY_SPLUNK_ACCESS_TOKEN"
-    },
-    {
-      "name": "SPLUNK_REALM",
-      "value": "MY_SPLUNK_REALM"
-    }
-  ],
-  "secrets": [
-    {
-      "valueFrom": "splunk-otel-collector-config",
-      "name": "SPLUNK_CONFIG_YAML"
-    }
-  ],
-  "image": "quay.io/signalfx/splunk-otel-collector:0.32.0",
-  "essential": true,
-  "name": "splunk_otel_collector"
-}
-```
+`splunk-otel-collector-config` in **AWS Systems Manager Parameter Store**. Then
+assign the parameter to environment variable `SPLUNK_CONFIG_YAML` using `valueFrom`.
 
 **Note:** You should add policy `AmazonSSMReadOnlyAccess` to the task role in order for
 the task to have read access to the Parameter Store.
-
-### Standalone Task
-Extension `ecs_observer` is capable of scanning for targets in the entire cluster. This
-allows you to collect telemetry data by deploying the Collector in a task that is separate
-from tasks containing monitored applications. This is in contrast to the sidecar deployment
-where the Collector container and the monitored application containers are in the same task.
-Do not configure the ECS
-[resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#resource-detection-processor) 
-processor for the standalone task since it would detect resources in the standalone Collector
-task itself as opposed to resources in the tasks containing the monitored applications.
