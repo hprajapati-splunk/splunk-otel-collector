@@ -52,8 +52,6 @@ receivers:
     listenAddress: 0.0.0.0:9080
   smartagent/ecs-metadata:
     type: ecs-metadata
-    metadataEndpoint: "${ECS_TASK_METADATA_ENDPOINT}"
-    statsEndpoint: "${ECS_TASK_STATS_ENDPOINT}"
     excludedImages: ${env:ECS_METADATA_EXCLUDED_IMAGES}
 
 processors:

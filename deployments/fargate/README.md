@@ -44,34 +44,7 @@ In the above container definition the Collector is configured to use the default
 configuration file `/etc/otel/collector/fargate_config.yaml`. The Collector image Dockerfile
 is available [here](../../cmd/otelcol/Dockerfile) and the contents of the default
 configuration file can be seen [here](../../cmd/otelcol/config/collector/fargate_config.yaml).
-Note that receiver `smartagent/ecs-metadata` is specified by default. Receiver
-`smartagent/ecs-metadata` uses **task metadata endpoint version 2** by default.
-This endpoint is enabled by default for tasks launched with network mode **awsvpc** 
-according to [docs](https://docs.aws.amazon.com/AmazonECS/latest/userguide/task-metadata-endpoint-fargate.html).
-For other network modes add the following environment variables to the Collector container
-definition if **task metadata endpoint version 3** enabled:
-```json
-{
-  "name": "ECS_TASK_METADATA_ENDPOINT",
-  "value": "${ECS_CONTAINER_METADATA_URI}/task"
-},
-{
-  "name": "ECS_TASK_STATS_ENDPOINT",
-  "value": "${ECS_CONTAINER_METADATA_URI}/task/stats"
-}
-```
-Add the following if **task metadata endpoint version 4** enabled instead:
-```json
-{
-  "name": "ECS_TASK_METADATA_ENDPOINT",
-  "value": "${ECS_CONTAINER_METADATA_URI_V4}/task"
-},
-{
-  "name": "ECS_TASK_STATS_ENDPOINT",
-  "value": "${ECS_CONTAINER_METADATA_URI_V4}/task/stats"
-}
-```
-
+Note that the receiver `smartagent/ecs-metadata` is enabled by default.
 
 In summary, the default Collector container definition does the following:
 - Specifies the Collector image.
@@ -230,7 +203,7 @@ the task to have read access to the Parameter Store.
 Extension `ecs_observer` is capable of scanning for targets in the entire cluster. This
 allows you to collect telemetry data by deploying the Collector in a task that is separate
 from tasks containing monitored applications. This is in contrast to the sidecar deployment
-where the Collector container and the monitored application containers are in the same task.
+where the Collector container, and the monitored application containers are in the same task.
 Do not configure the ECS
 [resourcedetection](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/resourcedetectionprocessor#resource-detection-processor) 
 processor for the standalone task since it would detect resources in the standalone Collector
