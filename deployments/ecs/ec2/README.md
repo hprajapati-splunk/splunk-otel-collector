@@ -7,7 +7,7 @@ The
 [Splunk OpenTelemetry Connector](https://github.com/signalfx/splunk-otel-collector)
 (Collector) should to be run as a Daemon service in an EC2 ECS cluster.
 
-Requires Connector release v0.32.0 or newer which corresponds to image tag 0.32.0 and newer.
+Requires Connector release v0.33.0 or newer which corresponds to image tag 0.33.0 and newer.
 See image repository [here](https://quay.io/repository/signalfx/splunk-otel-collector?tab=tags).
 
 ## Getting Started
@@ -21,14 +21,13 @@ The Collector is configured to use the default configuration file `/etc/otel/col
 The Collector image Dockerfile is available [here](../../../cmd/otelcol/Dockerfile) and the contents of the default
 configuration file can be seen [here](../../../cmd/otelcol/config/collector/ecs_ec2_config.yaml).
 
-The configured network mode is **host**. This means that **task metadata endpoint version 2**
-used by receiver `smartagent/ecs-metadata` is not enabled by default. See
+The configured network mode for the task is **host**. This means that **task metadata endpoint
+version 2** used by receiver `smartagent/ecs-metadata` will not be enabled by default. See
 [here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint.html)
-for the task metadata endpoint version enabled by default in your environment. Depending on
-your version of task metadata endpoint, add the following to the **environment** list in the
-task definition. 
+for the task metadata endpoint version that will be enabled by default for your task.
 
-**Task metadata endpoint version 3**:
+Add the following to the **environment** list in the task definition JSON if **task metadata
+endpoint version 3** will be enabled for your task:
 ```json
 {
   "name": "ECS_TASK_METADATA_ENDPOINT",
@@ -39,7 +38,8 @@ task definition.
   "value": "${ECS_CONTAINER_METADATA_URI}/task/stats"
 }
 ```
-**Task metadata endpoint version 4**:
+Otherwise, add the following to the **environment** list in the task definition JSON if **task metadata
+endpoint version 4** will be enabled for your task:
 ```json
 {
   "name": "ECS_TASK_METADATA_ENDPOINT",

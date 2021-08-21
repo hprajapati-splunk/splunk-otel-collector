@@ -56,7 +56,7 @@
       "memoryReservation": null,
       "volumesFrom": [],
       "stopTimeout": null,
-      "image": "quay.io/signalfx/splunk-otel-collector:0.32.0",
+      "image": "quay.io/signalfx/splunk-otel-collector:0.33.0",
       "startTimeout": null,
       "firelensConfiguration": null,
       "dependsOn": null,
