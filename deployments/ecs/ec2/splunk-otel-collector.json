@@ -120,40 +120,28 @@
       "fsxWindowsFileServerVolumeConfiguration": null,
       "efsVolumeConfiguration": null,
       "name": "hostfs",
-      "host": null,
-      "dockerVolumeConfiguration": {
-        "autoprovision": null,
-        "labels": null,
-        "scope": "task",
-        "driver": "local",
-        "driverOpts": null
-      }
+      "host": {
+        "sourcePath": "/"
+      },
+      "dockerVolumeConfiguration": null
     },
     {
       "fsxWindowsFileServerVolumeConfiguration": null,
       "efsVolumeConfiguration": null,
       "name": "docker-socket",
-      "host": null,
-      "dockerVolumeConfiguration": {
-        "autoprovision": null,
-        "labels": null,
-        "scope": "task",
-        "driver": "local",
-        "driverOpts": null
-      }
+      "host": {
+        "sourcePath": "/var/run/docker.sock"
+      },
+      "dockerVolumeConfiguration": null
     },
     {
       "fsxWindowsFileServerVolumeConfiguration": null,
       "efsVolumeConfiguration": null,
       "name": "etc-passwd",
-      "host": null,
-      "dockerVolumeConfiguration": {
-        "autoprovision": null,
-        "labels": null,
-        "scope": "task",
-        "driver": "local",
-        "driverOpts": null
-      }
+      "host": {
+        "sourcePath": "/etc/passwd"
+      },
+      "dockerVolumeConfiguration": null
     }
   ]
 }
