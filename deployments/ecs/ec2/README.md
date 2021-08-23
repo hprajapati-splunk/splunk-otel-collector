@@ -74,7 +74,7 @@ Go to your cluster in the console
 4. Leave everything else at default and click "Next step"
 5. Leave everything on this next page at their defaults and click "Next step". 
 6. Leave everything on this next page at their defaults and click "Next step". 
-7. Click "Create Service" and the agent should be deployed onto each node in the ECS cluster. You should see infrastructure and docker metrics flowing soon.
+7. Click "Create Service" and the collector should be deployed onto each node in the ECS cluster. You should see infrastructure and docker metrics flowing soon.
 
 ## Custom Configuration
 To use a custom configuration file, replace the value of environment variable
@@ -117,7 +117,6 @@ extensions:
         metrics_ports: [9113]
         metrics_path: /metrics
 receivers:
-  signalfx:
   prometheus:
     config:
       scrape_configs:

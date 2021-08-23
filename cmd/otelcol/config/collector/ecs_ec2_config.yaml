@@ -74,6 +74,10 @@ processors:
   resourcedetection:
     detectors: [ecs]
     override: false
+  # Same as above but overrides resource attributes set by receivers
+  resourcedetection/internal:
+    detectors: [ecs]
+    override: true
   # Enables the filter processor with example settings
   # Full configuration here: https://github.com/open-telemetry/opentelemetry-collector/tree/main/processor/filterprocessor
   # NOTE: These settings need to be change when using this processor
@@ -120,8 +124,12 @@ service:
       #        - resource/add_environment
       exporters: [sapm, signalfx]
     metrics:
-      receivers: [signalfx, smartagent/signalfx-forwarder, smartagent/ecs-metadata, prometheus/internal]
+      receivers: [signalfx, smartagent/signalfx-forwarder, smartagent/ecs-metadata]
       processors: [memory_limiter, batch, resourcedetection]
+      exporters: [signalfx]
+    metrics/internal:
+      receivers: [prometheus/internal]
+      processors: [memory_limiter, batch, resourcedetection/internal]
       exporters: [signalfx]
 #    logs:
 #      receivers: [otlp]
